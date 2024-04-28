@@ -6,12 +6,15 @@ import sqlite3
 
 # Function to fetch data from the SQLite database
 def fetch_data(query):
-    conn = sqlite3.connect('airbnb6.db')
+    conn = sqlite3.connect('airbnb.db')
     cursor = conn.cursor()
     cursor.execute(query)
     data = cursor.fetchall()
     conn.close()
     return data
+
+#setting view to wide looks better to view table data
+st.set_page_config(layout="wide")
 
 # SQL query
 query = """
@@ -23,8 +26,10 @@ query = """
         pr.price,
         loc.city, 
         r.review_scores_rating,
-        p.amenity_wireless_internet,
-        p.amenity_wireless_internet,
+        p.amenity_wireless_internet,     
+        p.Amenity_air_conditioning,
+        p.Amenity_free_parking_on_premises,
+        p.amenity_tv,
         loc.latitude,
         loc.longitude
     FROM Listings l
@@ -34,22 +39,35 @@ query = """
     JOIN Review r ON l.Review_ID = r.Review_ID
 """
 
+# initial featch and store in chace for dynamic view 
+
+def select_columns(df, cols_to_ignore):
+    cols_to_select = [col for col in df.columns if col not in cols_to_ignore]
+    return df[cols_to_select]
+# for filtering df views etc 
+
 # Fetch data from the database
 listing_data = fetch_data(query)
 
 # Create DataFrame
-df = pd.DataFrame(listing_data, columns=['Property_ID', 'Property_Type', 'Bedrooms', 'Bathrooms', 'Price', 'City', 'Review_Scores_Rating', 'Amenity_Wireless_Internet', 'Amenity_Kitchen', 'Latitude', 'Longitude'])
+df = pd.DataFrame(listing_data, columns=['Property_ID', 'Property_Type', 'Bedrooms', 'Bathrooms', 'Price', 'City', 'Review_Scores_Rating', 'Amenity Wireless Internet', 'Amenity Air Conditioning', 'Amenity Free Parking On Premises', 'Amenity TV','Latitude','Longitude'])
 
 # Interactive filters
-price_range = st.slider('Price Range', min_value=0, max_value=500, value=(0, 500), step=10)
+price_range = st.slider('Price Range', min_value=0, max_value=df['Price'].max(), value=(0, df['Price'].max()), step=10)
 rating_range = st.slider('Rating Range', min_value=0, max_value=100, value=(0, 100), step=1)
 
 # Bedrooms and Bathrooms in the same row
 col1, col2 = st.columns([1, 1])
 with col1:
-    bedrooms_count = st.number_input('Bedrooms', min_value=1, max_value=10, step=1, value=None)
+    bedrooms_count = st.select_slider('Bedrooms', options=['Any'] + list(range(1, 11)), value=None)
+    # Convert 'Any' selection to None
+    if bedrooms_count == 'Any':
+        bedrooms_count = None
 with col2:
-    bathrooms_count = st.number_input('Bathrooms', min_value=1, max_value=10, step=1, value=None)
+    bathrooms_count = st.select_slider('Bathrooms', options=['Any'] + list(range(1, 11)), value=None)
+    # Convert 'Any' selection to None
+    if bathrooms_count == 'Any':
+        bathrooms_count = None
 
 # City and Amenities in the same row
 col1, col2 = st.columns([1, 1])
@@ -57,7 +75,7 @@ with col1:
     cities = df['City'].unique()
     selected_city = st.selectbox('City', options=['Any'] + list(cities))
 with col2:
-    selected_amenities = st.multiselect('Amenities', options=['Wireless Internet', 'Kitchen'])
+    selected_amenities = st.multiselect('Amenities', options=['Wireless Internet', 'Air Conditioning', 'Free Parking On Premises', 'TV'])
 
 # Filter data based on user input
 filtered_data = df[(df['Price'].between(price_range[0], price_range[1])) &
@@ -74,7 +92,7 @@ if selected_city != 'Any':
 
 if selected_amenities:
     for amenity in selected_amenities:
-        amenity_column = 'Amenity_' + amenity.lower().replace(' ', '_')
+        amenity_column = 'Amenity ' + amenity
         filtered_data = filtered_data[filtered_data[amenity_column] == 'Yes']
 
 # Number input for page navigation
@@ -84,13 +102,8 @@ page_value = st.number_input('Page', min_value=1, max_value=int(len(filtered_dat
 start_index = (page_value - 1) * 20
 end_index = min(page_value * 20, len(filtered_data))
 
-# Display filtered data with pagination, set table width to 100% and apply custom CSS
-st.markdown(
-    f'<style>.dataframe tbody tr {{border: 1px solid #dddddd;}} .dataframe thead th {{background-color: #dddddd;}}</style>',
-    unsafe_allow_html=True
-)
-st.table(filtered_data[start_index:end_index].style.set_table_attributes('style="width: 100%;"'))
-
+cols_to_ignore=['Latitude','Longitude']
+st.table(select_columns(filtered_data[start_index:end_index], cols_to_ignore))
 
 # Show results on map button
 if st.button('View Results on Map'):
@@ -104,7 +117,7 @@ if st.button('View Results on Map'):
         folium.Marker(
             location=[row['Latitude'], row['Longitude']],
             popup=f"Property ID: {row['Property_ID']} - Rating: {row['Review_Scores_Rating']} - Price: {row['Price']}",
-            icon=folium.Icon(color='green' if row['Review_Scores_Rating'] >= 4.5 else 'red')
+            icon=folium.Icon(color='green' if row['Review_Scores_Rating'] >= 80 else 'red')
         ).add_to(m)
 
     # Display the map
