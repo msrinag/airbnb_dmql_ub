@@ -44,6 +44,4 @@ Our project is hosted on: [Airbnb Ratings Streamlit App](https://dmql-pahse-2-ex
 - Execute `streamlit run home.py` command to launch the Streamlit app.
 - Enjoy exploring the app!
 
---- 
 
-I've organized the steps in a clearer and more concise manner, ensuring each step is explained thoroughly. Let me know if you need further adjustments!
