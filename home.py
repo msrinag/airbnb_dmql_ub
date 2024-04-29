@@ -105,12 +105,15 @@ end_index = min(page_value * 20, len(filtered_data))
 cols_to_ignore=['Latitude','Longitude']
 st.table(select_columns(filtered_data[start_index:end_index], cols_to_ignore))
 
+# Set the width and height of the map
+map_width = 800  # in pixels
+map_height = 600  # in pixels
 # Show results on map button
 if st.button('View Results on Map'):
     # Create a map centered on the average latitude and longitude of filtered data
     avg_latitude = filtered_data['Latitude'].mean()
     avg_longitude = filtered_data['Longitude'].mean()
-    m = folium.Map(location=[avg_latitude, avg_longitude], zoom_start=10)
+    m = folium.Map(location=[avg_latitude, avg_longitude], zoom_start=10,width=map_width, height=map_height)
 
     # Add markers for each listing in the current page
     for index, row in filtered_data[start_index:end_index].iterrows():
