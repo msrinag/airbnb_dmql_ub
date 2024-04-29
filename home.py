@@ -106,7 +106,7 @@ cols_to_ignore=['Latitude','Longitude']
 st.table(select_columns(filtered_data[start_index:end_index], cols_to_ignore))
 
 # Set the width and height of the map
-map_width = 75vw  # in screen size
+map_width = "75vw"  # in screen size
 map_height = 600  # in pixels
 # Show results on map button
 if st.button('View Results on Map'):
